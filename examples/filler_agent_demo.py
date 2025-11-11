@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 from livekit.agents import Agent, AgentSession, JobContext, WorkerOptions, cli
-from livekit.plugins import deepgram, elevenlabs, google, silero
+from livekit.plugins import deepgram, google, silero, cartesia  # Added cartesia
 from livekit.plugins.filler_handler import FillerWordFilter, FillerConfig
 
 load_dotenv()
@@ -11,27 +11,33 @@ class MyAgent(Agent):
 
 async def entrypoint(ctx: JobContext):
     await ctx.connect()
+    
     agent = MyAgent()
+    
     filler_filter = FillerWordFilter(
         ignored_words=FillerConfig.get_filler_words(),
         confidence_threshold=FillerConfig.get_confidence_threshold(),
         min_word_length=FillerConfig.get_min_word_length()
     )
-    # You can integrate filler_filter in event handling logic here as needed
-
+    
     session = AgentSession(
         vad=silero.VAD.load(),
         stt=deepgram.STT(model="nova-3"),
-        llm=google.LLM(model="gemini-2.5-pro"),  # Google Gemini model
-        tts=elevenlabs.TTS(),
-        allow_interruptions=True
+        llm=google.LLM(model="gemini-2.5-flash"),
+        tts=cartesia.TTS(),  # Simple, no complex auth needed
+        allow_interruptions=True,
+        min_interruption_words=2,
     )
-
-    # Optionally, bind filler_filter listener to agent speech state changes
+    
     @session.on("agent_state_changed")
     def on_agent_state(event):
-        filler_filter.set_agent_speaking_state(event.new_state == "speaking")
-
+        is_speaking = (event.new_state == "speaking")
+        filler_filter.set_agent_speaking_state(is_speaking)
+        if is_speaking:
+            print(f"🎙️ Agent started speaking")
+        else:
+            print(f"👂 Agent stopped speaking (state: {event.new_state})")
+    
     await session.start(agent=agent, room=ctx.room)
     await session.generate_reply(instructions="Greet the user and offer assistance.")
 
