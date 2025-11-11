@@ -1,0 +1,14 @@
+[project]
+name = "livekit-plugins-filler-handler"
+version = "0.1.0"
+description = "Filler word interruption handler plugin for LiveKit Agents"
+authors = [{ name = "Samarth Singh", email = "samsinghiitk@email.com" }]
+license = "Apache-2.0"
+requires-python = ">=3.9"
+dependencies = [
+    "livekit-agents>=1.0.0"
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
